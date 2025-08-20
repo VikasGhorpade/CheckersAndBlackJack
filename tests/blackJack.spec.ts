@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test'
 
 let baseURL = "https://deckofcardsapi.com/api/deck";
-let deck_id;
+let deck_count = 6;
 let draw_card_count=3;
 
 test.describe("Black Jack API automation", () => {
     let deck_id:string;
     test("Select and shuffle new deck and get deck id", async ({ request }) => {
-        let new_shuffle_deck_url = baseURL+"/new/shuffle/?deck_count=6";
+        let new_shuffle_deck_url = baseURL+"/new/shuffle/?deck_count="+deck_count;
         let response = await request.get(new_shuffle_deck_url);
         // Validate 200 response is received
         expect(response.ok()).toBeTruthy();
@@ -22,7 +22,7 @@ test.describe("Black Jack API automation", () => {
         console.log('Deck ID:', body.deck_id);
         deck_id = body.deck_id;
     });
-    test("Draw cards for user 1",async ({request})=>{
+    test("Draw cards for user 1 and User 2 and verify black Jack",async ({request})=>{
         expect(deck_id, "Deck id is generated").toBeTruthy();
         let draw_card_url = `${baseURL}/${deck_id}/draw/?count=${draw_card_count}`;
 
