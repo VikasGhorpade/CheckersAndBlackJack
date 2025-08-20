@@ -46,6 +46,7 @@ test.describe("Black Jack API automation", () => {
         // Get total points based on cards for user 2
         let user2TotalValue = getBlackJackTotalValue (body.cards);  
 
+        // This will fail for who do not have black java and will pass for user having black Jack
         expect.soft(user1TotalValue, "User 1 have black Jack?").toBe(21);
         expect.soft(user2TotalValue, "User 2 have black Jack?").toBe(21);
         
@@ -57,19 +58,27 @@ test.describe("Black Jack API automation", () => {
 function getBlackJackTotalValue(cards){
       let numberOfAce=0;
         let totalValue=0;
-        for(let card of cards){   
+        for(let card of cards){
+            // ensure properties we are interested in are validated. in interest off time, not validating all properties.
+            expect(card).toHaveProperty('value');
+            expect(card).toHaveProperty('code');   
             console.log(card.code+":"+card.value);
-            // console.log(totalValue);         
+            // If card is Ace, add 11 points to total         
             if(['ACE'].includes(card.value)){
                 numberOfAce++;
                 totalValue+=11;
             }
+            // Add 10 points for KING, QUEEN, JACK or 10
             else if(['KING','QUEEN','JACK',].includes(card.value) || card.value==0){
                 totalValue+=10;
-            }else{
+            }
+            // For all other cards, add value from card.value
+            else{
                 totalValue=totalValue + Number(card.value);
             }            
         }
+        // If total points are greater that 21, 
+        // then replace value of ACE with 1 by substracting 10 instead of 11 adding in previous step
         for(let i=0;i<numberOfAce;i++){
             if(totalValue>21){
                 totalValue = totalValue-10;
