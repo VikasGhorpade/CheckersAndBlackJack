@@ -3,11 +3,13 @@ import { Page, BrowserContext, Expect, expect } from '@playwright/test';
 export class CheckerPage {
   constructor(private page: Page, private context: BrowserContext, private expect: Expect) { }
   async getBoard() {
-    let listOfRows = this.page.locator('#board > .line').all();
+    let listOfRows = this.page.locator('#board > .line');
+    await listOfRows.first().waitFor({ state: 'visible', timeout: 50000 });
     let map = new Map();
-    for (let row of await listOfRows) {
+    for (let row of await listOfRows.all()) {
       let listOfColumns = await row.locator('img').all();
       for (let column of listOfColumns) {
+        await column.waitFor({ state: 'visible', timeout: 50000 });
         let spaceOwner = await column.getAttribute('src');
         let spaceName = await column.getAttribute('name');
         map.set(spaceName, spaceOwner);
@@ -22,10 +24,15 @@ export class CheckerPage {
     let fromLocator = "img[name='" + selectorFrom + "']";
     let toLocator = "img[name='" + selectorTo + "']";
     //click on source
-    await this.page.locator(fromLocator).click();
+    let sourceLocator = this.page.locator(fromLocator);
+    await sourceLocator.waitFor({ state: 'attached', timeout: 50000 });
+    await sourceLocator.click();
     // click on destination move
-    await this.page.locator(toLocator).click();
-    this.page.waitForLoadState();
+    let destLocator = this.page.locator(toLocator);
+    destLocator.waitFor({ state: 'attached', timeout: 50000 });
+    await destLocator.click();
+    this.page.waitForLoadState('load', { timeout: 50000 });
+    // this.page.waitForTimeout(10000);
   }
   async calculateNextMove(map: Map<string, string>) {
     // get map of simple moves
@@ -60,7 +67,7 @@ export class CheckerPage {
               } else {
                 value.push("space" + (nextLeftX + 1) + (nextY + 1));
               }
-              captureMove.set("space" + (nextLeftX + 1) + (nextY + 1), value);
+              captureMove.set(keyName, value);
             }
           }
           /// Validate next move for right side
@@ -74,7 +81,7 @@ export class CheckerPage {
             }
             simpleMoves.set(keyName, value);
           } else if (nextRightX != x && map.get("space" + nextRightX + nextY) == "me1.gif") {
-             // If next Right move is me1 and next to next Right is emplty then add to capture move
+            // If next Right move is me1 and next to next Right is emplty then add to capture move
             if ((nextY + 1) <= 8 && (nextRightX - 1) >= 0 && map.get("space" + (nextRightX - 1) + (nextY + 1))?.includes("gray.gif")) {
               let value: String[] = [];
               if (captureMove.get(keyName)) {
@@ -83,7 +90,7 @@ export class CheckerPage {
               } else {
                 value.push("space" + (nextRightX - 1) + (nextY + 1));
               }
-              captureMove.set("space" + (nextRightX - 1) + (nextY + 1), value);
+              captureMove.set(keyName, value);
             }
           }
         }
@@ -99,7 +106,7 @@ export class CheckerPage {
   }
 
   // Prioritize move based on check close to the center
-  async getPreferredMove(preferredMove: Map<string, string>) {
+  async getPreferredMove(preferredMove: Map<string, string[]>) {
     let positionX;
     let positionY;
     let x = 0;
@@ -107,7 +114,7 @@ export class CheckerPage {
 
     // get the next move which closer to center and towords the bottom
     for (let key of preferredMove.keys()) {
-      this.expect(true, "Map Keys and Values: " + key + ":" + preferredMove.get(key)).toBe(true);
+      // this.expect(true, "Map Keys and Values: " + key + ":" + preferredMove.get(key)).toBe(true);
       // get x and y positions of source
       if (key != null) {
         x = parseInt(key.slice(5, 6)); // Extracts '0'
@@ -121,13 +128,15 @@ export class CheckerPage {
         positionX = x;
       }
     }
+    // let value: String[] = [];
     let value = preferredMove.get("space" + positionX + positionY);
-    return ["space" + positionX + positionY, value];
+    // expect(true, "Current : space" + positionX + positionY + " Next: " + value).toBe(true);
+    return ["space" + positionX + positionY, value ? value[0] : null];
   }
   /// It restarts the game
   async restartGame() {
     await this.page.getByText("Restart...").click();
-    await this.page.waitForLoadState();
+    await this.page.waitForLoadState('load', { timeout: 50000 });
     this.expect(this.page.getByText("Select an orange piece to move.")).toBeVisible();
   }
 }
