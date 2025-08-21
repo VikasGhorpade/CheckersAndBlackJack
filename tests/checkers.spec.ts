@@ -8,7 +8,7 @@ test.describe("Play checkers game till 5 moves", () => {
         let checkerPage = new CheckerPage(page, context, expect);
         // Load checker game website
         await page.goto("https://www.gamesforthebrain.com/game/checkers/");
-        await page.waitForLoadState('load', { timeout: 10000 });
+        await page.waitForLoadState('load', { timeout: 50000 });
         // Verify title of page
         expect(page).toHaveTitle("Checkers - Games for the Brain");
 
